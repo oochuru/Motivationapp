@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,6 +23,37 @@
         <script src="app.js"></script>
      </div>
     
+     <div class = "schedule-container">
+        <h2>Help create you schedule</h2>
+        <form id = "schedule form">
+            <div class = "form-group">
+                <label for = "activity-name">Activity Name</label>
+                <input type = "text" id = "activity-name" required>
+            </div>
+            <div class= "form-group">
+                <label for = "activity-day">Day</label>
+                <select id = "activity-day" required>
+                    <option value = "Monday">Monday</option>
+                    <option value = "Tuesday">Tuesday</option>
+                    <option value = "Wednesday">Wednesday</option>
+                    <option value = "Thursday">Thursday</option>
+                    <option value = "Friday">Friday</option>
+                    <option value = "Saturday">Saturday</option>
+                    <option value = "Sunday">Sunday</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for = "activity-time">Time</label>
+                <input type = "time" id = "activity-time" required>
+            </div>
+            <button type ="submit">Add to Schedule</button>
+        </form>
+
+        <div class = "schedule-list-container">
+            <h3>Your Schedule</h3>
+            <ul id = "schedule-list"></ul>
+        </div>
+        
     
 </body>
 </html>
