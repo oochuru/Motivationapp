@@ -1,4 +1,4 @@
-// Variable to store quotes
+// Variable to store quotesl
 let allQuotes = [];
 
 async function loadQuotes(){
@@ -185,14 +185,18 @@ function checkSchedule() {
     document.addEventListener('DOMContentLoaded', () => {
       // Load existing quotes and schedules
       loadQuotes();
-      loadSchedules();
+      loadSchedule();
       
       // Add event listener to schedule form
-      document.getElementById('schedule-form').addEventListener('submit', addScheduleItem);
-      
+        const scheduleForm = document.getElementById('schedule-form');
+        if(scheduleForm){
+            scheduleForm.addEventListener('submit', addScheduleItem);
+        }
       // Request notification permission
+      if("Notification" in window){
       requestNotificationPermission();
-      
+      }
+      showMorningQuote();
       // Check schedule every minute
       setInterval(checkSchedule, 60000);
     });
@@ -200,3 +204,40 @@ function checkSchedule() {
         displayRandomQuote();
       });
 
+      //checks if its moring
+function isMorning(){
+    const now  = new Date();
+    const hour = now.getHours();
+    return hour>=6 && hour <=  11;
+    
+}
+function showMorningQuote(){
+    const lastMorningQuote = localStorage.getItem('LastMorningQuote');
+    const today = new Date().toLocaleDateString();
+    if(lastMorningQuote !== today && isMorning()){
+
+        const quote = getRandomQuote();
+        showNotification('Good Morning!', '${quote.quoteText} - ${quote.quoteAuthor}');
+        localStorage.setItem('LastMorningQuote', today);
+    }
+}
+function getRandomQuote(){
+    const lastRandomQuote = localStorage.getItem('lastRandomQuote');
+    const now = new Date().getTime();
+
+    if(!lastRandomQuote || (now - lastRandomQuote) > (3*60*60*1000)){
+        const quote = getRandomQuote();
+        showNotification('Random Quote', '${quote.quoteText} - ${quote.quoteAuthor}');
+        localStorage.setItem('lastRandomQuote', now);
+    }
+}
+function showNotification(title, message){
+    if('Notification' in window && Notification.permission === 'granted'){
+        new Notification(title, {
+            body: message,
+            icon: 'icon-192.png',
+        });
+    }else{
+        alert('${title}: ${message}');
+    }
+}
