@@ -1,4 +1,4 @@
-// Variable to store quotesl
+// Variable to store quotes
 let allQuotes = [];
 
 async function loadQuotes(){
@@ -50,7 +50,7 @@ function loadSchedule(){
     const savedSchedule = loacalStorage.getItem('motivationAppSchedule');
     if(savedSchedule){
         scheduleItems = JSON.parse(savedSchedule);
-        displauScheduleItems();
+        displayScheduleItems();
     }
 }
 
@@ -83,8 +83,9 @@ function addScheduleItem(event){
 }
 //display all scheduled items
 function displayScheduleItems(){
-    const itemList = document.getElementById('schedule-list');
-    itemList.innerHTML = '';
+    const scheduleList = document.getElementById('schedule-list');
+        if(!scheduleList) return;
+    scheduleList.innerHTML = '';
 
     scheduleItems.forEach(item => {
         const li = document.createElement('li');
@@ -93,7 +94,7 @@ function displayScheduleItems(){
         <span>${item.dau}, ${formatTime(item.time)}</span>
         <button class="delete-btn" data-id="${item.id}">Delete</button>
         `;
-        itemList.appendChild(li);
+        scheduleList.appendChild(li);
     }
     );
 }
@@ -198,3 +199,4 @@ function checkSchedule() {
     document.querySelector('.quote-container').addEventListener('swipe', function() {
         displayRandomQuote();
       });
+
