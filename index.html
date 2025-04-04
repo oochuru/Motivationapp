@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Motivational Quotes App</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <div class="app-container">
@@ -16,6 +17,9 @@
         <div class="quote-container">
             <p id="quote-text">"Loading quote. . ."</p>
             <p id="quote-author">- please Wait</p>
+            <div class = "quote-actions">
+                <button id="save-quote-btn">Save Quote</button>
+            </div>
         </div>
         
         <button id="new-quote-btn">New Quote</button>
@@ -24,8 +28,8 @@
      </div>
     
      <div class = "schedule-container">
-        <h2>Help create you schedule</h2>
-        <form id = "schedule form">
+        <h2>Make Ur Schedule Here</h2>
+        <form id = "schedule-form">
             <div class = "form-group">
                 <label for = "activity-name">Activity Name</label>
                 <input type = "text" id = "activity-name" required>
@@ -51,11 +55,21 @@
 
         <div class = "schedule-list-container">
             <h3>Your Schedule</h3>
-            <ul id = "schedule-list">
-                
-            </ul>
+            <ul id = "schedule-list"></ul>
+        </div>
+        <div class="tab-nav">
+            <button class="active" data-tab="quotes">Quotes</button>
+            <button data-tab="favorites">Favorites</button>
+            <button data-tab="schedule">Schedule</button>
         </div>
         
+        <!-- Add this section -->
+        <section class="section" id="favorites-section">
+            <h2>Your Favorite Quotes</h2>
+            <div id="favorites-container">
+                <!-- Saved quotes will be displayed here -->
+            </div>
+        </section>
     
 </body>
 </html>
