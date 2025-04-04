@@ -1,6 +1,6 @@
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #f5f5f5;
+    background-color: #000000;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -66,7 +66,7 @@ button:hover {
 #schedule-list li {
     padding: 10px;
     margin-bottom: 8px;
-    background-color: #f0f8ff;
+    background-color: #0040ff;
     border-radius: 5px;
 }
 .schedule-container {
@@ -168,4 +168,58 @@ button:hover {
     h1 {
       font-size: 24px;
     }
+  }
+  /* Add to your styles.css */
+.schedule-container {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .schedule-list-container {
+    margin-top: 20px;
+  }
+  
+  #schedule-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  #schedule-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background-color: #fff;
+    border-left: 4px solid #007bff;
+    border-radius: 0 4px 4px 0;
+  }
+  
+  .delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
   }
