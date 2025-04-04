@@ -1,225 +1,213 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #000000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background-color: #000;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
 }
 
 .app-container {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    padding: 30px;
-    max-width: 500px;
-    width: 100%;
-    text-align: center;
+  background-color: #111;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  padding: 25px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
+h1, h2, h3 {
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+}
+
+/* Quote styling */
 .quote-container {
-    background-color: #f9f9f9;
-    border-left: 4px solid #007bff;
-    padding: 20px;
-    margin: 20px 0;
-    text-align: left;
-    border-radius: 0 8px 8px 0;
+  background-color: #222;
+  border-left: 4px solid #fff;
+  padding: 25px;
+  margin: 25px 0;
+  border-radius: 4px;
 }
 
 #quote-text {
-    font-size: 20px;
-    margin-bottom: 10px;
+  font-size: 20px;
+  line-height: 1.5;
+  margin-bottom: 15px;
+  font-weight: 300;
 }
 
 #quote-author {
-    font-style: italic;
-    text-align: right;
-    color: #666;
+  font-style: italic;
+  text-align: right;
+  color: #aaa;
+  font-weight: 400;
 }
 
+/* Button styling */
 button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
+  background-color: #fff;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 button:hover {
-    background-color: #0056b3;
+  background-color: #ddd;
+  transform: translateY(-2px);
 }
 
+/* Schedule container */
 .schedule-container {
-    margin-top: 30px;
-    text-align: left;
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #222;
+  border-radius: 4px;
 }
 
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #aaa;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  background-color: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 16px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #fff;
+}
+
+/* Schedule list */
 #schedule-list {
-    list-style: none;
-    padding: 0;
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
 }
 
 #schedule-list li {
-    padding: 10px;
-    margin-bottom: 8px;
-    background-color: #0040ff;
-    border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #333;
+  border-left: 3px solid #fff;
+  border-radius: 4px;
 }
-.schedule-container {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-  
-  .schedule-list-container {
-    margin-top: 20px;
-  }
-  
-  #schedule-list {
-    list-style: none;
-    padding: 0;
-  }
-  
-  #schedule-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    margin-bottom: 8px;
-    background-color: #fff;
-    border-left: 4px solid #007bff;
-    border-radius: 0 4px 4px 0;
-  }
-  
-  .delete-btn {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .app-notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: white;
-    border-left: 5px solid #007bff;
-    padding: 15px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    max-width: 350px;
-    z-index: 1000;
-  }
-  
-  .notification-quote {
-    font-style: italic;
-    margin: 10px 0;
-  }
-  
-  .close-notification {
-    background-color: #eee;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    float: right;
-  }
+
+.delete-btn {
+  background-color: #333;
+  color: #ff4d4d;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.delete-btn:hover {
+  background-color: #444;
+}
+
+/* Notification */
+.app-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #222;
+  border-left: 4px solid #fff;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 300px;
+  z-index: 1000;
+  border-radius: 4px;
+}
+
+.close-notification {
+  background-color: transparent;
+  color: #aaa;
+  padding: 5px;
+  float: right;
+}
+
+.notification-quote {
+  margin-top: 10px;
+  color: #ddd;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
   .app-container {
-    width: 90%;
-    max-width: 500px;
-    margin: 20px auto;
-  }
-  
-  /* Make buttons easier to tap on mobile */
-  button {
-    min-height: 44px;
-    padding: 10px 20px;
-  }
-  
-  /* Adjust text size */
-  @media (max-width: 480px) {
-    #quote-text {
-      font-size: 18px;
-    }
-    h1 {
-      font-size: 24px;
-    }
-  }
-  /* Add to your styles.css */
-.schedule-container {
-    margin-top: 30px;
+    border-radius: 0;
     padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
   }
   
-  .form-group {
-    margin-bottom: 15px;
+  #quote-text {
+    font-size: 18px;
   }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-  
-  .schedule-list-container {
-    margin-top: 20px;
-  }
-  
-  #schedule-list {
-    list-style: none;
-    padding: 0;
-  }
-  
-  #schedule-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    margin-bottom: 8px;
-    background-color: #fff;
-    border-left: 4px solid #007bff;
-    border-radius: 0 4px 4px 0;
-  }
-  
-  .delete-btn {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
+}
+/* Center the new quote button */
+#new-quote-btn {
+  display: block;
+  margin: 20px auto;
+}
+.quote-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+#save-quote-btn {
+  background-color: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+#save-quote-btn:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+#save-quote-btn.saved {
+  background-color: #fff;
+  color: #000;
+}
