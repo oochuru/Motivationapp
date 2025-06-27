@@ -9,6 +9,12 @@
     <title>Motivational Quotes App</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily Motivation">
+<link rel="apple-touch-icon" href="icon-192x192.png">
+<link rel="manifest" href="manifest.json">
 </head>
 <body>
     <div class="app-container">
@@ -70,6 +76,25 @@
                 <!-- Saved quotes will be displayed here -->
             </div>
         </section>
+        function addNotificationTestButtons() {
+            const testButtonsHTML = `
+                <div style="background: #ff6b6b; padding: 15px; margin: 10px 0; border-radius: 8px; text-align: center;">
+                    <h4 style="color: white; margin: 0 0 10px 0;">🧪 Notification Testing</h4>
+                    <button onclick="notificationTester.testNotificationNow()" 
+                            style="background: white; color: #ff6b6b; padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                        Test Now
+                    </button>
+                    <button onclick="notificationTester.testScheduledNotification()" 
+                            style="background: white; color: #ff6b6b; padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                        Test 10s Delay
+                    </button>
+                </div>
+
+                <div id="inout-parser"></div>
+<script>
+document.getElementById('inout-parser').innerHTML = createINOutParserUI();
+</script>
+            
     
 </body>
 </html>
