@@ -486,3 +486,583 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+// Add this to your existing JavaScript file
+// This will enable browser notifications for your web app
+
+class NotificationManager {
+    constructor() {
+        this.quotes = [
+            "Time to shine! Your shift starts in 1 hour. You've got this! 💪",
+            "Ready to conquer the day? Your work starts soon - stay motivated! ⭐",
+            "One hour until showtime! Remember: you're capable of amazing things! 🌟",
+            "Almost time to make things happen! Your shift is coming up! 🚀",
+            "Gear up for greatness! Your work starts in an hour! ⚡"
+        ];
+    }
+
+    // Request permission for notifications
+    async requestPermission() {
+        if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                console.log('Notification permission granted');
+                return true;
+            } else {
+                alert('Please enable notifications to get motivated before your shifts!');
+                return false;
+            }
+        } else {
+            alert('Your browser does not support notifications');
+            return false;
+        }
+    }
+
+    // Schedule a notification
+    scheduleNotification(activityName, dayOfWeek, time) {
+        const [hours, minutes] = time.split(':');
+        const notificationTime = new Date();
+        
+        // Calculate next occurrence of this day and time
+        const targetDay = this.getDayNumber(dayOfWeek);
+        const currentDay = notificationTime.getDay();
+        
+        let daysUntilTarget = targetDay - currentDay;
+        if (daysUntilTarget < 0) {
+            daysUntilTarget += 7; // Next week
+        }
+        
+        notificationTime.setDate(notificationTime.getDate() + daysUntilTarget);
+        notificationTime.setHours(parseInt(hours) - 1, parseInt(minutes), 0, 0); // 1 hour before
+        
+        // If the time has passed today, schedule for next week
+        if (notificationTime <= new Date()) {
+            notificationTime.setDate(notificationTime.getDate() + 7);
+        }
+        
+        const timeUntilNotification = notificationTime.getTime() - new Date().getTime();
+        
+        if (timeUntilNotification > 0) {
+            setTimeout(() => {
+                this.showNotification(activityName);
+                // Schedule the next week's notification
+                this.scheduleNotification(activityName, dayOfWeek, time);
+            }, timeUntilNotification);
+            
+            console.log(`Notification scheduled for ${notificationTime.toLocaleString()}`);
+            return true;
+        }
+        return false;
+    }
+
+    // Show the actual notification
+    showNotification(activityName) {
+        const randomQuote = this.quotes[Math.floor(Math.random() * this.quotes.length)];
+        const notification = new Notification(`${activityName} starts soon!`, {
+            body: randomQuote,
+            icon: '/favicon.ico', // Add your app icon
+            tag: 'motivation-reminder',
+            requireInteraction: true
+        });
+
+        // Close notification after 10 seconds
+        setTimeout(() => notification.close(), 10000);
+        
+        // Optional: Play a sound (you'd need to add an audio file)
+        // const audio = new Audio('/notification-sound.mp3');
+        // audio.play().catch(e => console.log('Could not play sound'));
+    }
+
+    getDayNumber(dayName) {
+        const days = {
+            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+            'Thursday': 4, 'Friday': 5, 'Saturday': 6
+        };
+        return days[dayName] || 0;
+    }
+}
+
+// Initialize the notification manager
+const notificationManager = new NotificationManager();
+
+// Modify your existing "Add to Schedule" function
+function addToScheduleWithNotifications() {
+    // Your existing schedule adding logic here...
+    const activityName = document.getElementById('activity-name').value;
+    const selectedDay = document.getElementById('day-select').value;
+    const selectedTime = document.getElementById('time-input').value;
+    
+    if (activityName && selectedDay && selectedTime) {
+        // Add to your existing schedule display
+        addToScheduleDisplay(activityName, selectedDay, selectedTime);
+        
+        // NEW: Schedule the notification
+        notificationManager.requestPermission().then(granted => {
+            if (granted) {
+                notificationManager.scheduleNotification(activityName, selectedDay, selectedTime);
+                alert(`✅ Schedule saved! You'll get a motivational reminder 1 hour before ${activityName} on ${selectedDay} at ${selectedTime}`);
+            }
+        });
+        
+        // Save to localStorage for persistence
+        saveScheduleToStorage(activityName, selectedDay, selectedTime);
+    }
+}
+
+// Load saved schedules when page loads
+function loadSchedulesAndSetNotifications() {
+    const savedSchedules = JSON.parse(localStorage.getItem('userSchedules') || '[]');
+    
+    savedSchedules.forEach(schedule => {
+        // Restore the schedule display
+        addToScheduleDisplay(schedule.activity, schedule.day, schedule.time);
+        
+        // Reschedule notifications
+        notificationManager.scheduleNotification(schedule.activity, schedule.day, schedule.time);
+    });
+    
+    if (savedSchedules.length > 0) {
+        notificationManager.requestPermission();
+    }
+}
+
+function saveScheduleToStorage(activity, day, time) {
+    const savedSchedules = JSON.parse(localStorage.getItem('userSchedules') || '[]');
+    savedSchedules.push({ activity, day, time, id: Date.now() });
+    localStorage.setItem('userSchedules', JSON.stringify(savedSchedules));
+}
+
+// Call this when your page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadSchedulesAndSetNotifications();
+});
+
+// Add this CSS for better notification styling (add to your CSS file)
+const notificationStyles = `
+.notification-permission-banner {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.notification-permission-banner button {
+    background: white;
+    color: #ff6b6b;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.schedule-item {
+    position: relative;
+}
+
+.schedule-item.has-notification::after {
+    content: "🔔";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+`;
+
+// Inject the styles
+const styleSheet = document.createElement("style");
+styleSheet.innerText = notificationStyles;
+document.head.appendChild(styleSheet);
+
+class NotificationTester {
+    constructor() {
+        this.testQuotes = [
+            "🚀 Test notification working! Your motivation app is ready!",
+            "💪 Notifications are live! Time to stay motivated!",
+            "⭐ Success! Your app will keep you motivated before every shift!"
+        ];
+    }
+
+    async testNotificationNow() {
+        console.log("Testing notifications...");
+        
+        // Check if notifications are supported
+        if (!("Notification" in window)) {
+            alert("❌ Your browser doesn't support notifications. Try Chrome or Safari.");
+            return false;
+        }
+
+        // Check current permission status
+        console.log("Current permission:", Notification.permission);
+        
+        if (Notification.permission === "granted") {
+            this.showTestNotification();
+            return true;
+        } else if (Notification.permission === "default") {
+            // Request permission
+            const permission = await Notification.requestPermission();
+            console.log("Permission result:", permission);
+            
+            if (permission === "granted") {
+                this.showTestNotification();
+                return true;
+            } else {
+                alert("❌ Please allow notifications to use this feature!");
+                return false;
+            }
+        } else {
+            alert("❌ Notifications are blocked. Please enable them in your browser settings.");
+            return false;
+        }
+    }
+
+    showTestNotification() {
+        const quote = this.testQuotes[Math.floor(Math.random() * this.testQuotes.length)];
+        
+        const notification = new Notification("🎉 Motivation App Test", {
+            body: quote,
+            icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💪%3C/text%3E%3C/svg%3E",
+            tag: "motivation-test",
+            requireInteraction: false,
+            badge: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⭐%3C/text%3E%3C/svg%3E"
+        });
+
+        // Auto-close after 5 seconds
+        setTimeout(() => {
+            notification.close();
+        }, 5000);
+
+        // Log success
+        console.log("✅ Test notification sent!");
+        alert("✅ Test notification sent! Check if you saw it.");
+        
+        return notification;
+    }
+
+    // Test scheduling a notification for 10 seconds from now
+    testScheduledNotification() {
+        if (Notification.permission !== "granted") {
+            alert("Please allow notifications first!");
+            return;
+        }
+
+        console.log("Scheduling test notification for 10 seconds from now...");
+        
+        setTimeout(() => {
+            const notification = new Notification("⏰ Scheduled Test", {
+                body: "This notification was scheduled 10 seconds ago! Your app timing works perfectly.",
+                icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⏰%3C/text%3E%3C/svg%3E",
+                tag: "scheduled-test"
+            });
+            
+            setTimeout(() => notification.close(), 8000);
+        }, 10000);
+        
+        alert("⏰ Scheduled a test notification for 10 seconds from now!");
+    }
+}
+
+// Create tester instance
+const notificationTester = new NotificationTester();
+
+
+// Specialized parser for IN-N-OUT style schedules
+class INOutScheduleParser {
+    constructor() {
+        this.dayMap = {
+            'MON': 'Monday',
+            'TUE': 'Tuesday', 
+            'WED': 'Wednesday',
+            'THU': 'Thursday',
+            'FRI': 'Friday',
+            'SAT': 'Saturday',
+            'SUN': 'Sunday'
+        };
+    }
+
+    parseINOutEmail(emailText) {
+        const schedules = [];
+        const lines = emailText.split('\n');
+        
+        let currentWeek = null;
+        let associateName = null;
+        
+        // Extract associate name and week info
+        lines.forEach(line => {
+            const weekMatch = line.match(/Week Of:\s*(\d{2}\/\d{2}\/\d{2})/);
+            if (weekMatch) {
+                currentWeek = weekMatch[1];
+            }
+            
+            const nameMatch = line.match(/Associate:\s*\d+\s*-\s*(.+)/);
+            if (nameMatch) {
+                associateName = nameMatch[1].trim();
+            }
+        });
+
+        // Parse each day's schedule
+        lines.forEach((line, index) => {
+            // Look for day patterns like "MON:", "TUE:", etc.
+            const dayMatch = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN):/);
+            
+            if (dayMatch) {
+                const dayAbbr = dayMatch[1];
+                const dayName = this.dayMap[dayAbbr];
+                
+                // Look for the time on the same line or next line
+                let timeInfo = this.extractTimeFromLine(line);
+                
+                // If no time on current line, check next line
+                if (!timeInfo && index + 1 < lines.length) {
+                    timeInfo = this.extractTimeFromLine(lines[index + 1]);
+                }
+                
+                if (timeInfo && timeInfo !== 'OFF') {
+                    const schedule = {
+                        day: dayName,
+                        timeRange: timeInfo,
+                        startTime: this.parseStartTime(timeInfo),
+                        endTime: this.parseEndTime(timeInfo),
+                        week: currentWeek,
+                        associate: associateName,
+                        rawLine: line
+                    };
+                    
+                    schedules.push(schedule);
+                }
+            }
+        });
+        
+        return schedules;
+    }
+    
+    extractTimeFromLine(line) {
+        // Look for time patterns like "08:30pm-02:00am" or "03:30pm-09:15pm"
+        const timeMatch = line.match(/(\d{1,2}:\d{2}[ap]m)-(\d{1,2}:\d{2}[ap]m)/i);
+        if (timeMatch) {
+            return timeMatch[0]; // Return the full time range
+        }
+        
+        // Check for "OFF" 
+        if (line.includes('OFF')) {
+            return 'OFF';
+        }
+        
+        return null;
+    }
+    
+    parseStartTime(timeRange) {
+        if (!timeRange || timeRange === 'OFF') return null;
+        
+        const startTime = timeRange.split('-')[0];
+        return this.convertTo24Hour(startTime);
+    }
+    
+    parseEndTime(timeRange) {
+        if (!timeRange || timeRange === 'OFF') return null;
+        
+        const endTime = timeRange.split('-')[1];
+        return this.convertTo24Hour(endTime);
+    }
+    
+    convertTo24Hour(timeStr) {
+        const match = timeStr.match(/(\d{1,2}):(\d{2})([ap]m)/i);
+        if (!match) return timeStr;
+        
+        let hour = parseInt(match[1]);
+        const minute = match[2];
+        const ampm = match[3].toLowerCase();
+        
+        if (ampm === 'pm' && hour !== 12) {
+            hour += 12;
+        } else if (ampm === 'am' && hour === 12) {
+            hour = 0;
+        }
+        
+        return `${hour.toString().padStart(2, '0')}:${minute}`;
+    }
+    
+    // Calculate notification time (1 hour before shift)
+    calculateNotificationTime(startTime) {
+        if (!startTime) return null;
+        
+        const [hour, minute] = startTime.split(':').map(Number);
+        let notificationHour = hour - 1;
+        
+        // Handle midnight rollover
+        if (notificationHour < 0) {
+            notificationHour = 23;
+        }
+        
+        return `${notificationHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    }
+}
+
+// Enhanced UI for the IN-N-OUT parser
+function createINOutParserUI() {
+    return `
+        <div id="inout-parser-section" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #ff6b6b, #ff8e53); border-radius: 12px; color: white;">
+            <h3 style="margin-bottom: 15px; display: flex; align-items: center;">
+                🍔 IN-N-OUT Schedule Parser
+                <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 20px; font-size: 12px; margin-left: 10px;">SMART</span>
+            </h3>
+            
+            <p style="margin-bottom: 15px; opacity: 0.9;">
+                Copy your entire IN-N-OUT schedule email and paste it below. I'll automatically extract all your work times!
+            </p>
+            
+            <textarea 
+                id="inout-email-input" 
+                placeholder="Paste your full IN-N-OUT schedule email here..."
+                style="width: 100%; height: 150px; padding: 15px; border-radius: 8px; border: none; background: rgba(255,255,255,0.9); color: #333; resize: vertical; font-family: monospace; font-size: 14px;"
+            ></textarea>
+            
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button 
+                    onclick="parseINOutSchedule()" 
+                    style="background: white; color: #ff6b6b; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; min-width: 150px;"
+                >
+                    🔍 Parse Schedule
+                </button>
+                
+                <button 
+                    onclick="pasteExampleSchedule()" 
+                    style="background: rgba(255,255,255,0.2); color: white; padding: 12px 16px; border: 1px solid white; border-radius: 8px; cursor: pointer; font-weight: bold;"
+                >
+                    📝 Try Example
+                </button>
+            </div>
+            
+            <div id="inout-parsing-results" style="margin-top: 20px;"></div>
+        </div>
+    `;
+}
+
+// Function to parse the IN-N-OUT schedule
+function parseINOutSchedule() {
+    const emailText = document.getElementById('inout-email-input').value;
+    const resultsDiv = document.getElementById('inout-parsing-results');
+    
+    if (!emailText.trim()) {
+        resultsDiv.innerHTML = '<p style="color: rgba(255,255,255,0.8);">Please paste your schedule email first!</p>';
+        return;
+    }
+    
+    const parser = new INOutScheduleParser();
+    const schedules = parser.parseINOutEmail(emailText);
+    
+    if (schedules.length === 0) {
+        resultsDiv.innerHTML = `
+            <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3);">
+                <p>🤔 No schedules found. Make sure you copied the full email with lines like:</p>
+                <code style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; display: block; margin-top: 5px;">
+                MON:<br>
+                07/07 &nbsp;&nbsp;&nbsp;&nbsp; 08:30pm-02:00am
+                </code>
+            </div>
+        `;
+        return;
+    }
+    
+    let resultsHTML = `
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3);">
+            <h4 style="margin-bottom: 15px; color: white;">✅ Found ${schedules.length} work shifts:</h4>
+    `;
+    
+    schedules.forEach((schedule, index) => {
+        const notificationTime = parser.calculateNotificationTime(schedule.startTime);
+        
+        resultsHTML += `
+            <div style="background: rgba(255,255,255,0.1); padding: 12px; margin: 8px 0; border-radius: 6px; border-left: 4px solid white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong>${schedule.day}</strong>
+                    <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+                        ${schedule.timeRange}
+                    </span>
+                </div>
+                
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">
+                    🕐 Work: ${schedule.startTime} - ${schedule.endTime}<br>
+                    🔔 Notification: ${notificationTime} (1 hour before)
+                </div>
+                
+                <button 
+                    onclick="addINOutSchedule('${schedule.day}', '${schedule.startTime}', '${schedule.timeRange}')"
+                    style="background: white; color: #ff6b6b; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;"
+                >
+                    ➕ Add to Schedule
+                </button>
+            </div>
+        `;
+    });
+    
+    resultsHTML += `
+        <div style="margin-top: 15px; text-align: center;">
+            <button 
+                onclick="addAllINOutSchedules(${JSON.stringify(schedules).replace(/"/g, '&quot;')})"
+                style="background: white; color: #ff6b6b; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;"
+            >
+                ⚡ Add All Shifts
+            </button>
+        </div>
+    </div>`;
+    
+    resultsDiv.innerHTML = resultsHTML;
+}
+
+// Function to add a single IN-N-OUT schedule
+function addINOutSchedule(day, startTime, timeRange) {
+    // Use your existing schedule adding logic
+    document.getElementById('activity-name').value = `IN-N-OUT Shift (${timeRange})`;
+    document.getElementById('day-select').value = day;
+    document.getElementById('time-input').value = startTime;
+    
+    // Add to schedule with notifications
+    addToScheduleWithNotifications();
+}
+
+// Function to add all schedules at once
+function addAllINOutSchedules(schedules) {
+    schedules.forEach(schedule => {
+        addINOutSchedule(schedule.day, schedule.startTime, schedule.timeRange);
+    });
+    
+    alert(`✅ Added ${schedules.length} shifts to your schedule with notifications!`);
+}
+
+// Function to paste example schedule for testing
+function pasteExampleSchedule() {
+    const exampleEmail = `Your manager has published the schedule for the week of 07/07/25 - 07/13/25:
+
+Associate: 183972 - Ochuru Ochuru
+
+Week Of: 07/07-07/13
+
+MON:
+07/07     08:30pm-02:00am
+
+TUE:
+07/08     03:30pm-09:15pm
+
+WED:
+07/09     OFF
+
+THU:
+07/10     OFF
+
+FRI:
+07/11     09:00pm-02:30am
+
+SAT:
+07/12     OFF`;
+    
+    document.getElementById('inout-email-input').value = exampleEmail;
+    alert('📝 Example schedule pasted! Now click "Parse Schedule" to see the magic!');
+}
