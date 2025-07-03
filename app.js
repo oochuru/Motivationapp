@@ -1066,3 +1066,546 @@ SAT:
     document.getElementById('inout-email-input').value = exampleEmail;
     alert('📝 Example schedule pasted! Now click "Parse Schedule" to see the magic!');
 }
+
+
+class GmailScheduleIntegration {
+    constructor() {
+        this.API_KEY = 'AIzaSyBDfbTss2Q08iJR-5uy9i2ZS1L2J6z1UZM'; // You'll need to get this from Google Cloud Console
+        this.CLIENT_ID = '241024677126-kog16pe0325428vpqj5sdpu7tfbso7oo.apps.googleusercontent.com'; // You'll need to get this from Google Cloud Console
+        this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest';
+        this.SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
+        
+        this.isSignedIn = false;
+        this.scheduleKeywords = ['schedule', 'shift', 'work hours', 'roster', 'rota', 'timetable'];
+        this.senders = ['no.reply@innout.com', 'store222@innout.com', 'schedule@', 'noreply@'];
+    }
+
+    async initialize() {
+        try {
+            await new Promise((resolve) => {
+                gapi.load('api:auth2', resolve);
+            });
+
+            await gapi.api.init({
+                apiKey: this.API_KEY,
+                clientId: this.CLIENT_ID,
+                discoveryDocs: [this.DISCOVERY_DOC],
+                scope: this.SCOPES
+            });
+
+            const authInstance = gapi.auth2.getAuthInstance();
+            this.isSignedIn = authInstance.isSignedIn.get();
+            
+            this.updateSignInStatus();
+            
+            // Listen for sign-in state changes
+            authInstance.isSignedIn.listen(this.updateSignInStatus.bind(this));
+            
+            return true;
+        } catch (error) {
+            console.error('Gmail API initialization failed:', error);
+            this.showError('Failed to initialize Gmail connection. Please try again.');
+            return false;
+        }
+    }
+
+    updateSignInStatus() {
+        const authInstance = gapi.auth2.getAuthInstance();
+        this.isSignedIn = authInstance.isSignedIn.get();
+        
+        if (this.isSignedIn) {
+            this.showSuccess('✅ Connected to Gmail!');
+            this.updateEmailUI(true);
+            this.startAutoScheduleDetection();
+        } else {
+            this.updateEmailUI(false);
+        }
+    }
+
+    async signIn() {
+        try {
+            const authInstance = gapi.auth2.getAuthInstance();
+            await authInstance.signIn();
+        } catch (error) {
+            console.error('Sign-in failed:', error);
+            this.showError('Gmail sign-in failed. Please try again.');
+        }
+    }
+
+    async signOut() {
+        try {
+            const authInstance = gapi.auth2.getAuthInstance();
+            await authInstance.signOut();
+            this.showSuccess('Disconnected from Gmail');
+        } catch (error) {
+            console.error('Sign-out failed:', error);
+        }
+    }
+
+    async searchScheduleEmails() {
+        if (!this.isSignedIn) {
+            this.showError('Please connect to Gmail first');
+            return [];
+        }
+
+        try {
+            this.showProgress('🔍 Searching for schedule emails...');
+            
+            // Build search query for schedule-related emails
+            const queries = [
+                'from:(no.reply@innout.com OR store222@innout.com OR noreply@innout.com)',
+                'subject:(schedule OR shift OR "work hours" OR roster)',
+                'newer_than:30d' // Only look at emails from last 30 days
+            ];
+            
+            const searchQuery = queries.join(' ');
+            
+            const response = await gapi.client.gmail.users.messages.list({
+                userId: 'me',
+                q: searchQuery,
+                maxResults: 20
+            });
+
+            const messages = response.result.messages || [];
+            this.showProgress(`📧 Found ${messages.length} potential schedule emails`);
+            
+            const scheduleEmails = [];
+            
+            // Get detailed information for each message
+            for (const message of messages.slice(0, 10)) { // Limit to 10 most recent
+                try {
+                    const messageDetail = await gapi.client.gmail.users.messages.get({
+                        userId: 'me',
+                        id: message.id,
+                        format: 'full'
+                    });
+                    
+                    const emailData = this.parseEmailData(messageDetail.result);
+                    if (emailData) {
+                        scheduleEmails.push(emailData);
+                    }
+                } catch (error) {
+                    console.warn('Failed to fetch message:', message.id, error);
+                }
+            }
+            
+            this.showSuccess(`✅ Found ${scheduleEmails.length} schedule emails!`);
+            return scheduleEmails;
+            
+        } catch (error) {
+            console.error('Email search failed:', error);
+            this.showError('Failed to search emails. Please check your connection.');
+            return [];
+        }
+    }
+
+    parseEmailData(message) {
+        try {
+            const headers = message.payload.headers;
+            const subject = headers.find(h => h.name === 'Subject')?.value || '';
+            const from = headers.find(h => h.name === 'From')?.value || '';
+            const date = headers.find(h => h.name === 'Date')?.value || '';
+            
+            // Extract email body
+            let body = '';
+            if (message.payload.body && message.payload.body.data) {
+                body = atob(message.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            } else if (message.payload.parts) {
+                // Handle multipart messages
+                for (const part of message.payload.parts) {
+                    if (part.mimeType === 'text/plain' && part.body.data) {
+                        body += atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+                    }
+                }
+            }
+            
+            // Check if this looks like a schedule email
+            const isScheduleEmail = this.scheduleKeywords.some(keyword => 
+                subject.toLowerCase().includes(keyword) || 
+                body.toLowerCase().includes(keyword)
+            );
+            
+            if (!isScheduleEmail) {
+                return null;
+            }
+            
+            // Parse schedule from email body
+            const schedules = this.parseScheduleFromText(body);
+            
+            if (schedules.length === 0) {
+                return null;
+            }
+            
+            return {
+                id: message.id,
+                subject: subject,
+                from: from,
+                date: new Date(date),
+                body: body,
+                schedules: schedules
+            };
+            
+        } catch (error) {
+            console.warn('Failed to parse email:', error);
+            return null;
+        }
+    }
+
+    parseScheduleFromText(text) {
+        const schedules = [];
+        const lines = text.split('\n');
+        
+        // Enhanced regex patterns for different schedule formats
+        const patterns = {
+            // IN-N-OUT format: "MON:\n07/07     08:30pm-02:00am"
+            innout: /^(MON|TUE|WED|THU|FRI|SAT|SUN):/,
+            // Time ranges: "08:30pm-02:00am" or "8:30 AM - 2:00 PM"
+            timeRange: /(\d{1,2}):?(\d{2})?\s*(am|pm|AM|PM)?\s*[-–]\s*(\d{1,2}):?(\d{2})?\s*(am|pm|AM|PM)/g,
+            // Days: Monday, Tuesday, etc.
+            days: /(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)/gi,
+            // Dates: 07/07, 12/25, etc.
+            dates: /\d{1,2}\/\d{1,2}/g
+        };
+        
+        const dayMap = {
+            'mon': 'Monday', 'tue': 'Tuesday', 'wed': 'Wednesday', 'thu': 'Thursday',
+            'fri': 'Friday', 'sat': 'Saturday', 'sun': 'Sunday',
+            'monday': 'Monday', 'tuesday': 'Tuesday', 'wednesday': 'Wednesday',
+            'thursday': 'Thursday', 'friday': 'Friday', 'saturday': 'Saturday', 'sunday': 'Sunday'
+        };
+        
+        let currentDay = null;
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Check for day headers (IN-N-OUT style)
+            const dayMatch = line.match(patterns.innout);
+            if (dayMatch) {
+                currentDay = dayMap[dayMatch[1].toLowerCase()];
+                
+                // Check next line for time
+                if (i + 1 < lines.length) {
+                    const nextLine = lines[i + 1];
+                    const timeMatches = [...nextLine.matchAll(patterns.timeRange)];
+                    
+                    timeMatches.forEach(match => {
+                        const schedule = this.parseTimeRange(match[0], currentDay);
+                        if (schedule) {
+                            schedules.push(schedule);
+                        }
+                    });
+                }
+                continue;
+            }
+            
+            // Look for time ranges in current line
+            const timeMatches = [...line.matchAll(patterns.timeRange)];
+            if (timeMatches.length > 0) {
+                // Try to find day in same line or nearby lines
+                let dayForTime = currentDay;
+                
+                const dayMatches = [...line.matchAll(patterns.days)];
+                if (dayMatches.length > 0) {
+                    dayForTime = dayMap[dayMatches[0][1].toLowerCase()];
+                }
+                
+                timeMatches.forEach(match => {
+                    const schedule = this.parseTimeRange(match[0], dayForTime || 'Monday');
+                    if (schedule) {
+                        schedules.push(schedule);
+                    }
+                });
+            }
+        }
+        
+        return schedules;
+    }
+
+    parseTimeRange(timeRangeStr, day) {
+        try {
+            const parts = timeRangeStr.split(/[-–]/);
+            if (parts.length !== 2) return null;
+            
+            const startTime = this.parseTime(parts[0].trim());
+            const endTime = this.parseTime(parts[1].trim());
+            
+            if (!startTime || !endTime) return null;
+            
+            return {
+                day: day,
+                startTime: startTime,
+                endTime: endTime,
+                timeRange: timeRangeStr,
+                activity: 'Work Shift'
+            };
+        } catch (error) {
+            console.warn('Failed to parse time range:', timeRangeStr, error);
+            return null;
+        }
+    }
+
+    parseTime(timeStr) {
+        const match = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(am|pm|AM|PM)?/);
+        if (!match) return null;
+        
+        let hour = parseInt(match[1]);
+        const minute = match[2] ? parseInt(match[2]) : 0;
+        const ampm = match[3] ? match[3].toLowerCase() : null;
+        
+        // Convert to 24-hour format
+        if (ampm === 'pm' && hour !== 12) {
+            hour += 12;
+        } else if (ampm === 'am' && hour === 12) {
+            hour = 0;
+        }
+        
+        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    }
+
+    async startAutoScheduleDetection() {
+        this.showProgress('🔄 Starting automatic schedule detection...');
+        
+        const scheduleEmails = await this.searchScheduleEmails();
+        
+        if (scheduleEmails.length === 0) {
+            this.showInfo('📫 No new schedule emails found. I\'ll keep checking for you!');
+            return;
+        }
+        
+        // Process the most recent schedule email
+        const latestEmail = scheduleEmails[0];
+        this.displayFoundSchedules(latestEmail);
+        
+        // Set up periodic checking (every 30 minutes)
+        setInterval(() => {
+            this.checkForNewSchedules();
+        }, 30 * 60 * 1000);
+    }
+
+    async checkForNewSchedules() {
+        try {
+            const scheduleEmails = await this.searchScheduleEmails();
+            const lastChecked = localStorage.getItem('lastScheduleCheck');
+            const now = new Date().toISOString();
+            
+            if (lastChecked) {
+                const newEmails = scheduleEmails.filter(email => 
+                    email.date > new Date(lastChecked)
+                );
+                
+                if (newEmails.length > 0) {
+                    this.showSuccess(`📬 Found ${newEmails.length} new schedule emails!`);
+                    this.displayFoundSchedules(newEmails[0]);
+                }
+            }
+            
+            localStorage.setItem('lastScheduleCheck', now);
+        } catch (error) {
+            console.warn('Periodic schedule check failed:', error);
+        }
+    }
+
+    displayFoundSchedules(emailData) {
+        const schedules = emailData.schedules;
+        
+        if (schedules.length === 0) {
+            this.showInfo('📧 Email found but no schedules detected');
+            return;
+        }
+        
+        // Update the email screen with found schedules
+        const emailScreen = document.getElementById('email-screen');
+        const resultsContainer = emailScreen.querySelector('.schedule-form') || emailScreen;
+        
+        const resultsHTML = `
+            <div style="background: rgba(76, 175, 80, 0.1); border: 1px solid #4CAF50; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #4CAF50; margin-bottom: 15px;">✅ Schedules Found!</h3>
+                <p style="color: #a0a0a0; margin-bottom: 15px;">
+                    From: ${emailData.subject}<br>
+                    Date: ${emailData.date.toLocaleDateString()}
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    ${schedules.map((schedule, index) => `
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>${schedule.day}</strong><br>
+                                    <span style="color: #4CAF50;">${schedule.timeRange}</span>
+                                </div>
+                                <button onclick="addAutoSchedule('${schedule.day}', '${schedule.startTime}', '${schedule.activity} (${schedule.timeRange})')"
+                                        style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                    ➕ Add
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <button onclick="addAllAutoSchedules(${JSON.stringify(schedules).replace(/"/g, '&quot;')})"
+                        style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%;">
+                    ⚡ Add All Schedules
+                </button>
+            </div>
+        `;
+        
+        // Insert results after the form
+        const existingResults = emailScreen.querySelector('.auto-schedule-results');
+        if (existingResults) {
+            existingResults.innerHTML = resultsHTML;
+        } else {
+            const resultsDiv = document.createElement('div');
+            resultsDiv.className = 'auto-schedule-results';
+            resultsDiv.innerHTML = resultsHTML;
+            resultsContainer.appendChild(resultsDiv);
+        }
+    }
+
+    updateEmailUI(isConnected) {
+        const emailScreen = document.getElementById('email-screen');
+        const formContainer = emailScreen.querySelector('.schedule-form');
+        
+        if (isConnected) {
+            formContainer.innerHTML = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                    <h3 style="color: #4CAF50; margin-bottom: 10px;">Gmail Connected!</h3>
+                    <p style="color: #a0a0a0; margin-bottom: 20px;">
+                        Automatically checking for schedule emails...
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="gmailIntegration.searchScheduleEmails().then(emails => { if(emails.length > 0) gmailIntegration.displayFoundSchedules(emails[0]); })"
+                            style="background: #4CAF50; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1;">
+                        🔍 Search Now
+                    </button>
+                    <button onclick="gmailIntegration.signOut()"
+                            style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 107, 107, 0.3); color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer;">
+                        Disconnect
+                    </button>
+                </div>
+            `;
+        } else {
+            formContainer.innerHTML = `
+                <h3 style="color: #ff8e53; margin-bottom: 20px;">📧 Connect Your Gmail</h3>
+                <p style="color: #a0a0a0; margin-bottom: 20px; line-height: 1.5;">
+                    Connect your Gmail account to automatically detect and import work schedules from emails.
+                </p>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 107, 107, 0.2); margin-bottom: 20px;">
+                    <h4 style="color: #4CAF50; margin-bottom: 10px;">✨ What This Does:</h4>
+                    <ul style="color: #a0a0a0; padding-left: 20px; line-height: 1.6;">
+                        <li>Searches for schedule emails automatically</li>
+                        <li>Extracts work times and days</li>
+                        <li>Sets up notifications instantly</li>
+                        <li>Works with IN-N-OUT and other formats</li>
+                    </ul>
+                </div>
+                
+                <button onclick="gmailIntegration.signIn()"
+                        style="background: linear-gradient(135deg, #ea4335, #fbbc04); color: white; border: none; padding: 16px 24px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; box-shadow: 0 4px 20px rgba(234, 67, 53, 0.3);">
+                    <span style="margin-right: 8px;">📧</span>
+                    Connect Gmail Account
+                </button>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 107, 107, 0.2); margin-top: 20px;">
+                    <h4 style="color: #ff6b6b; margin-bottom: 8px;">🔒 Privacy & Security</h4>
+                    <p style="color: #a0a0a0; font-size: 14px; line-height: 1.4;">
+                        We only read emails to find your work schedules. No personal data is stored or shared. You can disconnect anytime.
+                    </p>
+                </div>
+            `;
+        }
+    }
+
+    // Utility methods for user feedback
+    showSuccess(message) {
+        this.showToast(message, '#4CAF50');
+    }
+
+    showError(message) {
+        this.showToast(message, '#f44336');
+    }
+
+    showInfo(message) {
+        this.showToast(message, '#2196F3');
+    }
+
+    showProgress(message) {
+        this.showToast(message, '#ff8e53');
+    }
+
+    showToast(message, color = '#ff6b6b') {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${color};
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 10000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.5s ease;
+            max-width: 90%;
+            text-align: center;
+        `;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideUp 0.5s ease';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 500);
+        }, 4000);
+    }
+}
+
+// Global functions for the UI
+window.addAutoSchedule = function(day, startTime, activity) {
+    // Add the schedule item using existing function
+    const scheduleItem = {
+        id: Date.now(),
+        activity: activity,
+        day: day,
+        time: startTime,
+        notifications: true,
+        source: 'email'
+    };
+    
+    scheduleItems.push(scheduleItem);
+    localStorage.setItem('scheduleItems', JSON.stringify(scheduleItems));
+    
+    scheduleNotification(scheduleItem);
+    showToast(`✅ ${activity} added for ${day} at ${startTime}!`);
+};
+
+window.addAllAutoSchedules = function(schedules) {
+    schedules.forEach(schedule => {
+        addAutoSchedule(schedule.day, schedule.startTime, schedule.activity + ' (' + schedule.timeRange + ')');
+    });
+    
+    showToast(`🎉 Added ${schedules.length} schedules with notifications!`);
+    
+    // Switch to schedule screen to show the results
+    setTimeout(() => {
+        showScreen('schedule-screen');
+    }, 1500);
+};
+
+// Initialize Gmail integration
+const gmailIntegration = new GmailScheduleIntegration();
+
+// Auto-initialize when Gmail API loads
+window.gapiLoaded = function() {
+    gmailIntegration.initialize();
+};
