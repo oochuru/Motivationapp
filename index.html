@@ -1,100 +1,1147 @@
 <!DOCTYPE html>
 <html lang="en">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motivational Quotes App</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Daily Motivation">
-<link rel="apple-touch-icon" href="icon-192x192.png">
-<link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Daily Motivation">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com;">
+    <title>Daily Motivation - Stay Motivated, Stay Productive</title>
+    
+    <!-- Gmail API -->
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 142, 83, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 107, 107, 0.05) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 1; transform: translateX(-50%) translateY(0); }
+            to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        /* Container */
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Starter Screen */
+        .starter-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .app-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-subtitle {
+            font-size: 18px;
+            color: #a0a0a0;
+            margin-bottom: 50px;
+            line-height: 1.4;
+        }
+
+        .starter-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .starter-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            border: none;
+            padding: 20px 24px;
+            border-radius: 16px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+        }
+
+        .starter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .starter-btn:hover::before {
+            left: 100%;
+        }
+
+        .starter-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(255, 107, 107, 0.4);
+        }
+
+        .starter-btn:active {
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            font-size: 24px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.6);
+        }
+
+        /* Main App Screens */
+        .app-screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-screen.active {
+            display: flex;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 0 30px 0;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .screen-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            flex: 1;
+        }
+
+        /* Quote Screen */
+        .quote-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 20px;
+            padding: 40px 30px;
+            margin: 40px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quote-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff6b6b, #ff8e53);
+        }
+
+        .quote-text {
+            font-size: 22px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-style: italic;
+            color: #ffffff;
+        }
+
+        .quote-author {
+            font-size: 16px;
+            color: #ff8e53;
+            font-weight: 600;
+        }
+
+        /* Schedule Screen */
+        .schedule-form {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ff8e53;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: auto;
+            padding-top: 30px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            border: none;
+            padding: 18px 24px;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secondary-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Schedule List */
+        .schedule-list {
+            margin-top: 20px;
+        }
+
+        .schedule-item {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .schedule-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #ff6b6b, #ff8e53);
+            border-radius: 2px 0 0 2px;
+        }
+
+        /* Gmail Integration Button */
+        .gmail-connect {
+            background: linear-gradient(135deg, #ea4335, #fbbc04);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(234, 67, 53, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .gmail-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(234, 67, 53, 0.4);
+        }
+
+        /* Debug buttons */
+        .debug-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .debug-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .debug-btn.orange { background: #FF9800; }
+        .debug-btn.gray { background: #9E9E9E; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100%;
+            }
+            
+            .starter-screen {
+                padding: 20px 16px;
+            }
+            
+            .app-title {
+                font-size: 28px;
+            }
+            
+            .quote-container {
+                padding: 30px 20px;
+                margin: 20px 0;
+            }
+            
+            .quote-text {
+                font-size: 20px;
+            }
+        }
+
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-top: 2px solid #ff6b6b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <h1>Daily Motivation</h1>
-        
-        <div class="quote-container">
-            <p id="quote-text">"Loading quote. . ."</p>
-            <p id="quote-author">- please Wait</p>
-            <div class = "quote-actions">
-                <button id="save-quote-btn">Save Quote</button>
-            </div>
-        </div>
-        
-        <button id="new-quote-btn">New Quote</button>
-    <div>
-        <script src="app.js"></script>
-     </div>
-    
-     <div class = "schedule-container">
-        <h2>Make Ur Schedule Here</h2>
-        <form id = "schedule-form">
-            <div class = "form-group">
-                <label for = "activity-name">Activity Name</label>
-                <input type = "text" id = "activity-name" required>
-            </div>
-            <div class= "form-group">
-                <label for = "activity-day">Day</label>
-                <select id = "activity-day" required>
-                    <option value = "Monday">Monday</option>
-                    <option value = "Tuesday">Tuesday</option>
-                    <option value = "Wednesday">Wednesday</option>
-                    <option value = "Thursday">Thursday</option>
-                    <option value = "Friday">Friday</option>
-                    <option value = "Saturday">Saturday</option>
-                    <option value = "Sunday">Sunday</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for = "activity-time">Time</label>
-                <input type = "time" id = "activity-time" required>
-            </div>
-            <button type ="submit">Add to Schedule</button>
-        </form>
-
-        <div class = "schedule-list-container">
-            <h3>Your Schedule</h3>
-            <ul id = "schedule-list"></ul>
-        </div>
-        <div class="tab-nav">
-            <button class="active" data-tab="quotes">Quotes</button>
-            <button data-tab="favorites">Favorites</button>
-            <button data-tab="schedule">Schedule</button>
-        </div>
-        
-        <!-- Add this section -->
-        <section class="section" id="favorites-section">
-            <h2>Your Favorite Quotes</h2>
-            <div id="favorites-container">
-                <!-- Saved quotes will be displayed here -->
-            </div>
-        </section>
-        function addNotificationTestButtons() {
-            const testButtonsHTML = `
-                <div style="background: #ff6b6b; padding: 15px; margin: 10px 0; border-radius: 8px; text-align: center;">
-                    <h4 style="color: white; margin: 0 0 10px 0;">🧪 Notification Testing</h4>
-                    <button onclick="notificationTester.testNotificationNow()" 
-                            style="background: white; color: #ff6b6b; padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                        Test Now
-                    </button>
-                    <button onclick="notificationTester.testScheduledNotification()" 
-                            style="background: white; color: #ff6b6b; padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                        Test 10s Delay
-                    </button>
-                </div>
-
-                <div id="inout-parser"></div>
-<script>
-document.getElementById('inout-parser').innerHTML = createINOutParserUI();
-</script>
+    <div class="container">
+        <!-- Starter Screen -->
+        <div id="starter-screen" class="starter-screen">
+            <div class="logo">💪</div>
+            <h1 class="app-title">Daily Motivation</h1>
+            <p class="app-subtitle">Stay motivated with smart quotes and schedule reminders</p>
             
-    
+            <div class="starter-buttons">
+                <button class="starter-btn" onclick="showScreen('quote-screen')">
+                    <span class="btn-icon">💬</span>
+                    Get Motivated
+                </button>
+                
+                <button class="starter-btn secondary-btn" onclick="showScreen('schedule-screen')">
+                    <span class="btn-icon">📅</span>
+                    My Schedule
+                </button>
+                
+                <button class="starter-btn secondary-btn" onclick="showScreen('email-screen')">
+                    <span class="btn-icon">📧</span>
+                    Connect Email
+                </button>
+            </div>
+        </div>
+
+        <!-- Quote Screen -->
+        <div id="quote-screen" class="app-screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('starter-screen')">← Back</button>
+                <h2 class="screen-title">Daily Motivation</h2>
+                <div style="width: 80px;"></div>
+            </div>
+            
+            <div class="quote-container">
+                <div id="quote-text" class="quote-text">
+                    "Loading inspiring quotes..."
+                </div>
+                <div id="quote-author" class="quote-author">
+                    - Daily Motivation
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="new-quote-btn" class="action-btn" onclick="generateNewQuote()">
+                    🎲 New Quote
+                </button>
+                <button class="action-btn secondary-action-btn" onclick="saveQuote()">
+                    ❤️ Save to Favorites
+                </button>
+                <button class="action-btn secondary-action-btn" onclick="showFavorites()">
+                    📚 View Favorites
+                </button>
+            </div>
+        </div>
+
+        <!-- Schedule Screen -->
+        <div id="schedule-screen" class="app-screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('starter-screen')">← Back</button>
+                <h2 class="screen-title">Work Schedule</h2>
+                <div style="width: 80px;"></div>
+            </div>
+            
+            <div class="schedule-form">
+                <div class="form-group">
+                    <label class="form-label">Activity Name</label>
+                    <input id="activity-name" class="form-input" type="text" placeholder="e.g., Work Shift, Meeting">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Day</label>
+                    <select id="day-select" class="form-input">
+                        <option value="">Select a day</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Start Time</label>
+                    <input id="time-input" class="form-input" type="time">
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn" onclick="addScheduleItem()">
+                    ➕ Add to Schedule
+                </button>
+                <button class="action-btn secondary-action-btn" onclick="showScreen('email-screen')">
+                    📧 Import from Email
+                </button>
+            </div>
+            
+            <div id="schedule-list" class="schedule-list">
+                <!-- Schedule items will be added here -->
+            </div>
+        </div>
+
+        <!-- Email Integration Screen -->
+        <div id="email-screen" class="app-screen">
+            <div class="header">
+                <button class="back-btn" onclick="showScreen('starter-screen')">← Back</button>
+                <h2 class="screen-title">Email Integration</h2>
+                <div style="width: 80px;"></div>
+            </div>
+            
+            <div class="schedule-form">
+                <h3 style="color: #ff8e53; margin-bottom: 20px;">📧 Connect Your Gmail</h3>
+                <p style="color: #a0a0a0; margin-bottom: 20px; line-height: 1.5;">
+                    Connect your Gmail account to automatically detect and import work schedules from emails.
+                </p>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 107, 107, 0.2); margin-bottom: 20px;">
+                    <h4 style="color: #4CAF50; margin-bottom: 10px;">✨ What This Does:</h4>
+                    <ul style="color: #a0a0a0; padding-left: 20px; line-height: 1.6;">
+                        <li>Searches for schedule emails automatically</li>
+                        <li>Extracts work times and days</li>
+                        <li>Sets up notifications instantly</li>
+                        <li>Works with IN-N-OUT and other formats</li>
+                    </ul>
+                </div>
+                
+                <button onclick="connectGmail()" class="gmail-connect">
+                    <span style="margin-right: 8px;">📧</span>
+                    Connect Gmail Account
+                </button>
+                
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 107, 107, 0.2);">
+                    <h4 style="color: #ff6b6b; margin-bottom: 8px;">🔒 Privacy & Security</h4>
+                    <p style="color: #a0a0a0; font-size: 14px; line-height: 1.4;">
+                        We only read emails to find your work schedules. No personal data is stored or shared. You can disconnect anytime.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn secondary-action-btn" onclick="showScreen('schedule-screen')">
+                    📝 Manual Entry Instead
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Daily Motivation App loading...');
+
+        // ========== QUOTE MANAGER ==========
+        class QuoteManager {
+            constructor() {
+                this.quotes = [];
+                this.currentQuoteIndex = 0;
+                this.favoriteQuotes = JSON.parse(localStorage.getItem('favoriteQuotes') || '[]');
+                this.isLoading = false;
+            }
+
+            async loadQuotes() {
+                if (this.quotes.length > 0) return; // Already loaded
+                
+                this.isLoading = true;
+                this.showLoadingState();
+                
+                try {
+                    console.log('📚 Loading quotes from quotes.json...');
+                    
+                    // Load quotes from your JSON file
+                    const response = await fetch('./quotes.json');
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const quotesData = await response.json();
+                    
+                    // Handle different JSON structures
+                    if (Array.isArray(quotesData)) {
+                        this.quotes = quotesData;
+                    } else if (quotesData.quotes && Array.isArray(quotesData.quotes)) {
+                        this.quotes = quotesData.quotes;
+                    } else {
+                        throw new Error('Invalid quotes format in JSON file');
+                    }
+                    
+                    console.log(`✅ Loaded ${this.quotes.length} quotes successfully!`);
+                    
+                    // Generate first quote
+                    this.generateRandomQuote();
+                    
+                    this.showSuccess(`🎉 Loaded ${this.quotes.length} motivational quotes!`);
+                    
+                } catch (error) {
+                    console.error('❌ Failed to load quotes:', error);
+                    
+                    // Fallback to hardcoded quotes
+                    this.quotes = this.getFallbackQuotes();
+                    console.log('📝 Using fallback quotes instead');
+                    
+                    this.generateRandomQuote();
+                    this.showError('Using offline quotes - check your internet connection');
+                    
+                } finally {
+                    this.isLoading = false;
+                    this.hideLoadingState();
+                }
+            }
+
+            generateRandomQuote() {
+                if (this.quotes.length === 0) {
+                    console.warn('No quotes available');
+                    return;
+                }
+                
+                // Get random quote (avoid repeating the same quote)
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * this.quotes.length);
+                } while (newIndex === this.currentQuoteIndex && this.quotes.length > 1);
+                
+                this.currentQuoteIndex = newIndex;
+                const quote = this.quotes[this.currentQuoteIndex];
+                
+                // Update UI
+                this.displayQuote(quote);
+                
+                return quote;
+            }
+
+            displayQuote(quote) {
+                const quoteTextElement = document.getElementById('quote-text');
+                const quoteAuthorElement = document.getElementById('quote-author');
+                
+                if (!quoteTextElement || !quoteAuthorElement) {
+                    console.warn('Quote elements not found in DOM');
+                    return;
+                }
+                
+                // Handle different quote formats from your JSON
+                let text, author;
+                
+                if (typeof quote === 'string') {
+                    // Simple string format
+                    text = quote;
+                    author = 'Unknown';
+                } else if (quote.quoteText && quote.quoteAuthor) {
+                    // Your JSON format: { "quoteText": "...", "quoteAuthor": "..." }
+                    text = quote.quoteText;
+                    author = quote.quoteAuthor;
+                } else if (quote.text && quote.author) {
+                    // Alternative format: { "text": "...", "author": "..." }
+                    text = quote.text;
+                    author = quote.author;
+                } else {
+                    console.warn('Unknown quote format:', quote);
+                    text = 'Stay motivated and keep going!';
+                    author = 'Daily Motivation';
+                }
+                
+                // Add quote animation
+                quoteTextElement.style.opacity = '0.5';
+                quoteTextElement.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    quoteTextElement.textContent = `"${text}"`;
+                    quoteAuthorElement.textContent = `- ${author}`;
+                    
+                    quoteTextElement.style.opacity = '1';
+                    quoteTextElement.style.transform = 'scale(1)';
+                }, 200);
+            }
+
+            getCurrentQuote() {
+                if (this.quotes.length === 0) return null;
+                return this.quotes[this.currentQuoteIndex];
+            }
+
+            saveCurrentQuote() {
+                const currentQuote = this.getCurrentQuote();
+                if (!currentQuote) {
+                    this.showError('No quote to save!');
+                    return;
+                }
+                
+                // Convert to standard format
+                const quoteToSave = {
+                    text: currentQuote.quoteText || currentQuote.text || currentQuote,
+                    author: currentQuote.quoteAuthor || currentQuote.author || 'Unknown'
+                };
+                
+                // Check if already saved
+                const alreadySaved = this.favoriteQuotes.some(fav => 
+                    fav.text === quoteToSave.text
+                );
+                
+                if (alreadySaved) {
+                    this.showInfo('Quote already in favorites! 📚');
+                    return;
+                }
+                
+                // Save to favorites
+                this.favoriteQuotes.push(quoteToSave);
+                localStorage.setItem('favoriteQuotes', JSON.stringify(this.favoriteQuotes));
+                
+                this.showSuccess('Quote saved to favorites! ❤️');
+            }
+
+            showFavorites() {
+                if (this.favoriteQuotes.length === 0) {
+                    this.showInfo('No favorite quotes yet! Save some quotes first. 💙');
+                    return;
+                }
+                
+                const favoritesList = this.favoriteQuotes.map((quote, index) => 
+                    `${index + 1}. "${quote.text}" - ${quote.author}`
+                ).join('\n\n');
+                
+                alert(`Your Favorite Quotes (${this.favoriteQuotes.length}):\n\n${favoritesList}`);
+            }
+
+            showLoadingState() {
+                const button = document.getElementById('new-quote-btn');
+                const quoteText = document.getElementById('quote-text');
+                
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = '📚 Loading quotes...';
+                }
+                
+                if (quoteText) {
+                    quoteText.textContent = 'Loading inspiring quotes...';
+                }
+            }
+
+            hideLoadingState() {
+                const button = document.getElementById('new-quote-btn');
+                
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = '🎲 New Quote';
+                }
+            }
+
+            getFallbackQuotes() {
+                // Fallback quotes in case JSON loading fails
+                return [
+                    { quoteText: "The only way to do great work is to love what you do.", quoteAuthor: "Steve Jobs" },
+                    { quoteText: "Innovation distinguishes between a leader and a follower.", quoteAuthor: "Steve Jobs" },
+                    { quoteText: "Success is not final, failure is not fatal: it is the courage to continue that counts.", quoteAuthor: "Winston Churchill" },
+                    { quoteText: "The future belongs to those who believe in the beauty of their dreams.", quoteAuthor: "Eleanor Roosevelt" },
+                    { quoteText: "It is during our darkest moments that we must focus to see the light.", quoteAuthor: "Aristotle" },
+                    { quoteText: "Believe you can and you're halfway there.", quoteAuthor: "Theodore Roosevelt" },
+                    { quoteText: "Don't watch the clock; do what it does. Keep going.", quoteAuthor: "Sam Levenson" },
+                    { quoteText: "The way to get started is to quit talking and begin doing.", quoteAuthor: "Walt Disney" },
+                    { quoteText: "Excellence is not a skill, it's an attitude.", quoteAuthor: "Ralph Marston" },
+                    { quoteText: "Your attitude, not your aptitude, will determine your altitude.", quoteAuthor: "Zig Ziglar" }
+                ];
+            }
+
+            // Utility methods for user feedback
+            showSuccess(message) {
+                this.showToast(message, '#4CAF50');
+            }
+
+            showError(message) {
+                this.showToast(message, '#f44336');
+            }
+
+            showInfo(message) {
+                this.showToast(message, '#2196F3');
+            }
+
+            showToast(message, color = '#ff6b6b') {
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: ${color};
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    z-index: 10000;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    animation: slideDown 0.5s ease;
+                    max-width: 90%;
+                    text-align: center;
+                `;
+                toast.textContent = message;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.animation = 'slideUp 0.5s ease';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 500);
+                }, 3000);
+            }
+        }
+
+        // Initialize quote manager
+        const quoteManager = new QuoteManager();
+
+        // ========== SCHEDULE MANAGER ==========
+        let scheduleItems = JSON.parse(localStorage.getItem('scheduleItems') || '[]');
+
+        // ========== GMAIL INTEGRATION ==========
+        class GmailScheduleIntegration {
+            constructor() {
+                this.API_KEY = 'YOUR_GOOGLE_API_KEY'; // You'll need to get this
+                this.CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // You'll need to get this
+                this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest';
+                this.SCOPES = 'https://www.googleapis.com/auth/gmail.readonly';
+                
+                this.isSignedIn = false;
+            }
+
+            async initialize() {
+                try {
+                    await new Promise((resolve) => {
+                        gapi.load('api:auth2', resolve);
+                    });
+
+                    await gapi.api.init({
+                        apiKey: this.API_KEY,
+                        clientId: this.CLIENT_ID,
+                        discoveryDocs: [this.DISCOVERY_DOC],
+                        scope: this.SCOPES
+                    });
+
+                    const authInstance = gapi.auth2.getAuthInstance();
+                    this.isSignedIn = authInstance.isSignedIn.get();
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Gmail API initialization failed:', error);
+                    return false;
+                }
+            }
+
+            showToast(message, color = '#ff6b6b') {
+                quoteManager.showToast(message, color);
+            }
+        }
+
+        const gmailIntegration = new GmailScheduleIntegration();
+
+        // ========== SCREEN NAVIGATION ==========
+        function showScreen(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.starter-screen, .app-screen').forEach(screen => {
+                screen.classList.remove('active');
+                screen.style.display = 'none';
+            });
+            
+            // Show selected screen
+            const screen = document.getElementById(screenId);
+            if (screenId === 'starter-screen') {
+                screen.style.display = 'flex';
+            } else {
+                screen.style.display = 'flex';
+                screen.classList.add('active');
+            }
+            
+            // Load screen-specific data
+            if (screenId === 'schedule-screen') {
+                loadScheduleList();
+            }
+        }
+
+        // ========== QUOTE FUNCTIONS ==========
+        function generateNewQuote() {
+            if (quoteManager.isLoading) return;
+            
+            const button = document.getElementById('new-quote-btn');
+            if (button) {
+                button.disabled = true;
+                button.textContent = '🎲 Generating...';
+            }
+            
+            setTimeout(() => {
+                quoteManager.generateRandomQuote();
+                
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = '🎲 New Quote';
+                }
+            }, 500);
+        }
+
+        function saveQuote() {
+            quoteManager.saveCurrentQuote();
+        }
+
+        function showFavorites() {
+            quoteManager.showFavorites();
+        }
+
+        // ========== SCHEDULE FUNCTIONS ==========
+        function addScheduleItem() {
+            const activityName = document.getElementById('activity-name').value;
+            const day = document.getElementById('day-select').value;
+            const time = document.getElementById('time-input').value;
+            
+            if (!activityName || !day || !time) {
+                showToast('Please fill in all fields! 📝', '#f44336');
+                return;
+            }
+            
+            const scheduleItem = {
+                id: Date.now(),
+                activity: activityName,
+                day: day,
+                time: time,
+                notifications: true
+            };
+            
+            scheduleItems.push(scheduleItem);
+            localStorage.setItem('scheduleItems', JSON.stringify(scheduleItems));
+            
+            // Clear form
+            document.getElementById('activity-name').value = '';
+            document.getElementById('day-select').value = '';
+            document.getElementById('time-input').value = '';
+            
+            loadScheduleList();
+            scheduleNotification(scheduleItem);
+            showToast(`✅ ${activityName} scheduled for ${day} at ${time}!`, '#4CAF50');
+        }
+
+        function loadScheduleList() {
+            const scheduleList = document.getElementById('schedule-list');
+            
+            if (scheduleItems.length === 0) {
+                scheduleList.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #a0a0a0;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+                        <p>No scheduled items yet</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Add your first schedule item above!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            scheduleList.innerHTML = scheduleItems.map(item => `
+                <div class="schedule-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">${item.activity}</div>
+                            <div style="color: #ff8e53; font-size: 14px;">${item.day} at ${item.time}</div>
+                        </div>
+                        <div>
+                            🔔
+                            <button onclick="removeScheduleItem(${item.id})" 
+                                    style="background: rgba(255, 107, 107, 0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 8px;">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeScheduleItem(id) {
+            scheduleItems = scheduleItems.filter(item => item.id !== id);
+            localStorage.setItem('scheduleItems', JSON.stringify(scheduleItems));
+            loadScheduleList();
+            showToast('Schedule item removed! 🗑️', '#FF9800');
+        }
+
+        // ========== NOTIFICATION FUNCTIONS ==========
+        function scheduleNotification(scheduleItem) {
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    showToast(`🔔 Notification set for 1 hour before ${scheduleItem.activity}!`, '#4CAF50');
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            showToast('🔔 Notifications enabled! You\'ll get reminders before your shifts.', '#4CAF50');
+                        }
+                    });
+                }
+            }
+        }
+
+        // ========== EMAIL INTEGRATION ==========
+        function connectGmail() {
+            showToast('🚀 Gmail integration coming soon! Set up Google Cloud Console first.', '#2196F3');
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
+        function showToast(message, color = '#ff6b6b') {
+            quoteManager.showToast(message, color);
+        }
+
+        // ========== DEBUG FUNCTIONS ==========
+        function debugGmailIntegration() {
+            console.log('=== GMAIL INTEGRATION DEBUG ===');
+            
+            if (typeof gapi === 'undefined') {
+                console.error('❌ Gmail API (gapi) not loaded');
+                showToast('Gmail API not loaded - check internet connection', '#f44336');
+                return false;
+            } else {
+                console.log('✅ Gmail API (gapi) loaded successfully');
+            }
+            
+            if (typeof gmailIntegration === 'undefined') {
+                console.error('❌ gmailIntegration not initialized');
+                return false;
+            } else {
+                console.log('✅ gmailIntegration object exists');
+            }
+            
+            console.log('=== DEBUG COMPLETE ===');
+            showToast('Debug complete - check console for details', '#2196F3');
+            return true;
+        }
+
+        function testQuoteLoading() {
+            console.log('=== TESTING QUOTE LOADING ===');
+            console.log(`Quotes loaded: ${quoteManager.quotes.length}`);
+            
+            if (quoteManager.quotes.length > 0) {
+                const randomQuote = quoteManager.generateRandomQuote();
+                console.log('Generated quote:', randomQuote);
+                showToast(`✅ Quote system working! ${quoteManager.quotes.length} quotes loaded`, '#4CAF50');
+            } else {
+                console.warn('No quotes loaded yet');
+                showToast('No quotes loaded - trying to reload...', '#FF9800');
+                quoteManager.loadQuotes();
+            }
+        }
+
+        // ========== GMAIL API INTEGRATION ==========
+        window.gapiLoaded = function() {
+            console.log('📧 Gmail API script loaded');
+            gmailIntegration.initialize().then(success => {
+                if (success) {
+                    console.log('✅ Gmail integration initialized');
+                } else {
+                    console.warn('⚠️ Gmail integration failed to initialize');
+                }
+            });
+        };
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Daily Motivation App starting...');
+            
+            // Add debug buttons
+            const debugHTML = `
+                <div class="debug-buttons">
+                    <button class="debug-btn" onclick="debugGmailIntegration()">🔍 Debug Gmail</button>
+                    <button class="debug-btn orange" onclick="testQuoteLoading()">📚 Test Quotes</button>
+                    <button class="debug-btn gray" onclick="console.clear()">🗑️ Clear Console</button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', debugHTML);
+            
+            // Load quotes after a short delay
+            setTimeout(() => {
+                quoteManager.loadQuotes();
+            }, 1000);
+            
+            // Load existing schedules
+            loadScheduleList();
+            
+            // Request notification permission if we have schedules
+            if (scheduleItems.length > 0 && 'Notification' in window && Notification.permission === 'default') {
+                setTimeout(() => {
+                    if (confirm('Enable notifications to get motivated before your work shifts?')) {
+                        Notification.requestPermission();
+                    }
+                }, 2000);
+            }
+            
+            console.log('✅ App initialization complete');
+        });
+    </script>
 </body>
 </html>
